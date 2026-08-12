@@ -32,7 +32,13 @@ function Login() {
         }
       );
 
-      const data = await response.json();
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { message: text };
+      }
 
       if (!response.ok) {
         setMessage(data.message || "Invalid email or password");
