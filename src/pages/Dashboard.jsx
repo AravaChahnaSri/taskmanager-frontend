@@ -24,6 +24,31 @@ function Dashboard() {
   const [aiMessage, setAiMessage] = useState("");
   const [estimatedTime, setEstimatedTime] = useState("");
 
+  // Blockchain Audit state
+  const [showBlockchainModal, setShowBlockchainModal] = useState(false);
+  const [blockchainLedger, setBlockchainLedger] = useState([]);
+  const [blockchainVerify, setBlockchainVerify] = useState(null);
+  const [blockchainLoading, setBlockchainLoading] = useState(false);
+
+  const handleOpenBlockchain = async () => {
+    setShowBlockchainModal(true);
+    setBlockchainLoading(true);
+    try {
+      const [ledgerRes, verifyRes] = await Promise.all([
+        fetch(`${API_URL}/api/blockchain/ledger`),
+        fetch(`${API_URL}/api/blockchain/verify`),
+      ]);
+      const ledgerData = await ledgerRes.json();
+      const verifyData = await verifyRes.json();
+      setBlockchainLedger(ledgerData || []);
+      setBlockchainVerify(verifyData || null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setBlockchainLoading(false);
+    }
+  };
+
   const token = localStorage.getItem("token");
 
   // =========================
@@ -607,12 +632,21 @@ function Dashboard() {
 
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenBlockchain}
+              className="rounded-lg border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-semibold text-purple-700 transition hover:bg-purple-100 flex items-center gap-1.5"
+            >
+              <span>🔗</span> Blockchain Audit
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+            >
+              Logout
+            </button>
+          </div>
 
         </div>
 
@@ -1129,7 +1163,59 @@ function Dashboard() {
 
           )}
 
-        </div>
+        {/* BLOCKCHAIN AUDIT MODAL */}
+        {showBlockchainModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <span>⛓️</span> Immutable Task Audit Ledger (Blockchain)
+                  </h3>
+                  <p className="text-xs text-slate-500">Cryptographically verified SHA-256 block chain for task history audit trail</p>
+                </div>
+                <button
+                  onClick={() => setShowBlockchainModal(false)}
+                  className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-200"
+                >
+                  ✕ Close
+                </button>
+              </div>
+
+              {blockchainLoading ? (
+                <div className="py-12 text-center text-slate-500">Loading blockchain blocks...</div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {blockchainVerify && (
+                    <div className={`rounded-xl p-4 text-sm font-medium border ${blockchainVerify.valid ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200'}`}>
+                      🛡️ <strong>Chain Verification:</strong> {blockchainVerify.message} ({blockchainVerify.totalBlocks} total blocks)
+                    </div>
+                  )}
+
+                  {blockchainLedger.length === 0 ? (
+                    <p className="py-6 text-center text-slate-400">No blockchain blocks recorded yet. Create or update tasks to generate immutable blocks.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {blockchainLedger.map((block) => (
+                        <div key={block.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs shadow-xs">
+                          <div className="flex items-center justify-between text-slate-700 font-bold mb-1">
+                            <span>Block #{block.id} · Task ID: #{block.taskId}</span>
+                            <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">{block.action}</span>
+                          </div>
+                          <p className="text-slate-400 text-[11px] mb-2">{new Date(block.timestamp).toLocaleString()}</p>
+                          <div className="space-y-1 text-slate-600 truncate">
+                            <p><span className="text-slate-400">Prev Hash:</span> {block.previousHash}</p>
+                            <p className="font-semibold text-indigo-600"><span className="text-slate-400">Block Hash:</span> {block.blockHash}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       </main>
 
