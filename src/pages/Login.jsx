@@ -17,8 +17,9 @@ function Login() {
     setLoading(true);
 
     try {
+      const API_BASE = import.meta.env.VITE_API_URL || "https://taskmanager-backend-49bi.onrender.com";
       const response = await fetch(
-        "http://localhost:8080/api/auth/login",
+        `${API_BASE}/api/auth/login`,
         {
           method: "POST",
           headers: {

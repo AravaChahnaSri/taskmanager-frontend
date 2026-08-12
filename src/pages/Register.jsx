@@ -43,8 +43,9 @@ function Register() {
     try {
       setLoading(true);
 
+      const API_BASE = import.meta.env.VITE_API_URL || "https://taskmanager-backend-49bi.onrender.com";
       const response = await fetch(
-        "http://localhost:8080/api/auth/register",
+        `${API_BASE}/api/auth/register`,
         {
           method: "POST",
           headers: {
